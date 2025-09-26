@@ -1,0 +1,17 @@
+[
+    {
+        "roomId": "R101",
+        "date": "26\/09\/2025",
+        "start": "8:00",
+        "end": "9:00",
+        "capacity": "2"
+    },
+    {
+        "location": "WKC",
+        "room": "Board Room",
+        "date": "26\/09\/2025",
+        "start": "8:00",
+        "end": "9:00",
+        "pax": "1"
+    }
+]
