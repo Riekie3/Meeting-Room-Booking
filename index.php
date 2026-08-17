@@ -19,24 +19,33 @@
   include_once('Rooms.class.php');
 
   if (isset($_POST["bookRoom"])) {
-      $rooms = new Rooms(ROOMS_FEATURES);
-      $rooms->readRoomsDatabase($_POST["datePicked"]);
+      $startTime = $_POST["startTime"] ?? "";
+      $endTime   = $_POST["endTime"] ?? "";
+      $roomId    = $_POST["roomId"] ?? "";
+      $datePicked = $_POST["datePicked"] ?? "";
 
-      $availableRooms = $rooms->getAvailableRooms($_POST["startTime"], $_POST["endTime"]);
-      $availableIds = array_map(fn($r) => explode(",", $r)[0], $availableRooms);
-
-      if (in_array($_POST["roomId"], $availableIds)) {
-          $rooms->writeRoomsDatabase(
-              $_POST["startTime"],
-              $_POST["endTime"],
-              $_POST["roomId"],
-              $_POST["staffName"],
-              $_POST["department"],
-              $_POST["staffId"]
-          );
-          echo '<div class="alert alert-success">Room <b>' . $_POST["roomId"] . '</b> booked on <b>' . $_POST["datePicked"] . '</b> from ' . $_POST["startTime"] . ' to ' . $_POST["endTime"] . '.</div>';
+      if ($startTime === "" || $endTime === "" || $roomId === "" || $datePicked === "") {
+          echo '<div class="alert alert-danger">Please fill in all required fields.</div>';
+      } elseif ($startTime >= $endTime) {
+          echo '<div class="alert alert-danger">End time must be after start time.</div>';
       } else {
-          echo '<div class="alert alert-danger">Room unavailable for that slot.</div>';
+          $rooms = new Rooms(ROOMS_FEATURES);
+          $rooms->readRoomsDatabase($datePicked);
+
+          $booked = $rooms->bookRoom(
+              $startTime,
+              $endTime,
+              $roomId,
+              $_POST["staffName"] ?? "",
+              $_POST["department"] ?? "",
+              $_POST["staffId"] ?? ""
+          );
+
+          if ($booked) {
+              echo '<div class="alert alert-success">Room <b>' . htmlspecialchars($roomId) . '</b> booked on <b>' . htmlspecialchars($datePicked) . '</b> from ' . htmlspecialchars($startTime) . ' to ' . htmlspecialchars($endTime) . '.</div>';
+          } else {
+              echo '<div class="alert alert-danger">Room unavailable for that slot.</div>';
+          }
       }
   }
   ?>

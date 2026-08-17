@@ -12,17 +12,80 @@ class Rooms {
         // Convert dd/mm/yy → YYYY-MM-DD for storage
         $this->date = $this->normalizeDate($date);
 
-        $file = "data/" . $this->date . ".txt";
+        $file = $this->dataFile($this->date);
         $this->rooms = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES) : [];
     }
 
     public function getAvailableRooms($start, $end) {
+        return $this->availableRoomsFromLines($this->rooms, $start, $end);
+    }
+
+    /**
+     * Atomically checks availability and books the room, so two concurrent
+     * requests can't both succeed for the same room/slot (TOCTOU race).
+     * Returns true if booked, false if the slot was no longer available.
+     */
+    public function bookRoom($start, $end, $roomId, $staffName, $dept, $staffId) {
+        if (!array_key_exists($roomId, $this->features)) {
+            return false;
+        }
+
+        $file = $this->dataFile($this->date);
+        $dir = dirname($file);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+
+        $handle = fopen($file, "c+");
+        if ($handle === false) {
+            return false;
+        }
+
+        $booked = false;
+        try {
+            flock($handle, LOCK_EX);
+
+            $contents = stream_get_contents($handle);
+            $lines = $contents === "" ? [] : preg_split("/\r\n|\n|\r/", rtrim($contents, "\n"));
+            $lines = array_filter($lines, fn($l) => $l !== "");
+
+            $available = $this->availableRoomsFromLines($lines, $start, $end);
+            $availableIds = array_map(fn($r) => explode(",", $r)[0], $available);
+
+            if (in_array($roomId, $availableIds, true)) {
+                $line = implode(",", [
+                    $roomId,
+                    $start,
+                    $end,
+                    $this->sanitizeField($staffName),
+                    $this->sanitizeField($dept),
+                    $this->sanitizeField($staffId),
+                ]) . "\n";
+
+                fwrite($handle, $line);
+                fflush($handle);
+                $booked = true;
+            }
+
+            flock($handle, LOCK_UN);
+        } finally {
+            fclose($handle);
+        }
+
+        if ($booked) {
+            $this->rooms[] = trim($line);
+        }
+
+        return $booked;
+    }
+
+    private function availableRoomsFromLines($lines, $start, $end) {
         $available = [];
 
         foreach ($this->features as $roomId => $info) {
             $conflict = false;
 
-            foreach ($this->rooms as $line) {
+            foreach ($lines as $line) {
                 $parts = explode(",", $line);
                 if (count($parts) < 3) continue;
 
@@ -44,11 +107,13 @@ class Rooms {
         return $available;
     }
 
-    public function writeRoomsDatabase($start, $end, $roomId, $staffName, $dept, $staffId) {
-        $file = "data/" . $this->date . ".txt";
-        $line = implode(",", [$roomId, $start, $end, $staffName, $dept, $staffId]) . "\n";
+    // Strip characters that would corrupt the comma-delimited storage format
+    private function sanitizeField($value) {
+        return trim(str_replace([",", "\n", "\r"], " ", (string)$value));
+    }
 
-        file_put_contents($file, $line, FILE_APPEND);
+    private function dataFile($date) {
+        return "data/" . $date . ".txt";
     }
 
     private function normalizeDate($inputDate) {
