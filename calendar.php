@@ -14,9 +14,9 @@
 </head>
 <body>
   <div class="container">
-    <h1 class="mb-4"><i class="fas fa-calendar-alt"></i> Booking Calendar</h1>
+    <h1 class="mb-4">Booking Calendar</h1>
     <div id="calendar"></div>
-    <a href="index.php" class="btn btn-secondary mt-3"><i class="fas fa-arrow-left"></i> Back to Booking</a>
+    <a href="index.php" class="btn btn-secondary mt-3">&larr; Back to Booking</a>
   </div>
 
   <script>
@@ -26,7 +26,7 @@
       var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         height: 'auto',
-        events: 'getBookings.php',
+        events: 'events.php',
         eventColor: '#0d6efd',
         eventTextColor: '#fff',
         headerToolbar: {

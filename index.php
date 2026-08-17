@@ -127,7 +127,7 @@
   </form>
 
   <hr>
-  <h3>Calendar</h3>
+  <h3>Calendar <a href="calendar.php" class="btn btn-sm btn-outline-secondary">Full Calendar View</a></h3>
   <div class="mb-3">
     <?php foreach (LOCATION_COLORS as $loc => $color): ?>
       <span style="display:inline-block; width:15px; height:15px; background-color:<?= $color ?>; border:1px solid #000;"></span> <?= $loc ?>&nbsp;&nbsp;
