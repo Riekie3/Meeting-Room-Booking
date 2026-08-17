@@ -49,13 +49,13 @@ foreach ($files as $file) {
             "textColor" => "#000",
             "extendedProps" => [
                 "details" => "
-                    <b>Room:</b> {$roomId}<br>
-                    <b>Capacity:</b> {$capacity}<br>
-                    <b>Staff:</b> {$staff} ({$staffId})<br>
-                    <b>Department:</b> {$dept}<br>
-                    <b>Time:</b> {$startTime} - {$endTime}<br>
-                    <b>Date:</b> {$datePart}<br>
-                    <b>Duration:</b> {$durationLabel}
+                    <b>Room:</b> " . htmlspecialchars($roomId) . "<br>
+                    <b>Capacity:</b> " . htmlspecialchars((string)$capacity) . "<br>
+                    <b>Staff:</b> " . htmlspecialchars($staff) . " (" . htmlspecialchars($staffId) . ")<br>
+                    <b>Department:</b> " . htmlspecialchars($dept) . "<br>
+                    <b>Time:</b> " . htmlspecialchars($startTime) . " - " . htmlspecialchars($endTime) . "<br>
+                    <b>Date:</b> " . htmlspecialchars($datePart) . "<br>
+                    <b>Duration:</b> " . htmlspecialchars($durationLabel) . "
                 "
             ]
         ];
