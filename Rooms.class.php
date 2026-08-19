@@ -21,6 +21,34 @@ class Rooms {
     }
 
     /**
+     * Full occupancy picture for every room on the loaded date: capacity,
+     * location, every booked time range, and (when $start/$end are given)
+     * whether the room is free for that specific slot.
+     */
+    public function getRoomStatuses($start = null, $end = null) {
+        $statuses = [];
+
+        foreach ($this->features as $roomId => $info) {
+            $bookedRanges = $this->bookedRangesFor($roomId, $this->rooms);
+
+            $availableForSlot = null;
+            if ($start !== null && $end !== null) {
+                $availableForSlot = !$this->hasConflict($bookedRanges, $start, $end);
+            }
+
+            $statuses[] = [
+                "id" => $roomId,
+                "capacity" => $info['capacity'],
+                "location" => $info['location'],
+                "bookedRanges" => $bookedRanges,
+                "availableForSlot" => $availableForSlot,
+            ];
+        }
+
+        return $statuses;
+    }
+
+    /**
      * Atomically checks availability and books the room, so two concurrent
      * requests can't both succeed for the same room/slot (TOCTOU race).
      * Returns true if booked, false if the slot was no longer available.
@@ -83,28 +111,34 @@ class Rooms {
         $available = [];
 
         foreach ($this->features as $roomId => $info) {
-            $conflict = false;
+            $bookedRanges = $this->bookedRangesFor($roomId, $lines);
 
-            foreach ($lines as $line) {
-                $parts = explode(",", $line);
-                if (count($parts) < 3) continue;
-
-                if ($parts[0] == $roomId) {
-                    $s = $parts[1];
-                    $e = $parts[2];
-                    // Overlap check
-                    if (!($end <= $s || $start >= $e)) {
-                        $conflict = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!$conflict) {
+            if (!$this->hasConflict($bookedRanges, $start, $end)) {
                 $available[] = $roomId . "," . $info['capacity'];
             }
         }
         return $available;
+    }
+
+    private function bookedRangesFor($roomId, $lines) {
+        $ranges = [];
+        foreach ($lines as $line) {
+            $parts = explode(",", $line);
+            if (count($parts) < 3) continue;
+            if ($parts[0] !== $roomId) continue;
+
+            $ranges[] = ["start" => $parts[1], "end" => $parts[2]];
+        }
+        return $ranges;
+    }
+
+    private function hasConflict($bookedRanges, $start, $end) {
+        foreach ($bookedRanges as $range) {
+            if (!($end <= $range['start'] || $start >= $range['end'])) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Strip characters that would corrupt the comma-delimited storage format
