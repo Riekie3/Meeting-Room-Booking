@@ -55,7 +55,13 @@
       slotMinTime: "07:00:00",
       slotMaxTime: "21:00:00",
       scrollTime: "08:00:00",
-      eventTimeFormat: { hour: "numeric", minute: "2-digit", meridiem: "short" },
+      // 24-hour times, matching the rest of the app (09:00–11:00)
+      eventTimeFormat: { hour: "2-digit", minute: "2-digit", hour12: false },
+      slotLabelFormat: { hour: "2-digit", minute: "2-digit", hour12: false },
+      // Overlapping bookings sit side by side instead of stacking on top of each other
+      slotEventOverlap: false,
+      // Week view columns are narrow: show just the start time (the full range is in the details modal)
+      views: { timeGridWeek: { displayEventEnd: false } },
       headerToolbar: {
         left: "prev,next today",
         center: "title",

@@ -71,7 +71,9 @@ body {
   border-radius: 1rem;
   box-shadow: var(--panel-shadow);
 }
-.sticky-lg-top { top: 5rem; }
+/* Only offset when the card is actually sticky (Bootstrap makes it sticky from lg up);
+   below that .card is position:relative and a global top would shove it down the page */
+@media (min-width: 992px) { .sticky-lg-top { top: 5rem; } }
 
 /* ---------- Form ---------- */
 .form-label { font-size: .85rem; font-weight: 600; margin-bottom: .35rem; }
@@ -185,6 +187,11 @@ body {
 /* Events render as <a>; stop Bootstrap's link blue from overriding the white-on-color text */
 #calendar a.fc-event, #calendar a.fc-event:hover { color: #fff; text-decoration: none; }
 #calendar .fc-daygrid-block-event .fc-event-time, #calendar .fc-daygrid-block-event .fc-event-title { color: inherit; }
+/* Keep the time fully visible; let the room name take the squeeze (ellipsis) instead */
+#calendar .fc-daygrid-event { font-size: .78rem; }
+#calendar .fc-daygrid-event .fc-event-time { flex-shrink: 0; overflow: visible; margin-right: .35em; font-weight: 600; }
+#calendar .fc-more-link { color: var(--accent); font-weight: 600; text-decoration: none; }
+#calendar .fc-list-day-cushion a { color: inherit; text-decoration: none; }
 #calendar .fc-daygrid-day.fc-day-future:not(.fc-day-past), #calendar .fc-daygrid-day.fc-day-today { cursor: pointer; }
 #calendar .fc-theme-standard td, #calendar .fc-theme-standard th, #calendar .fc-theme-standard .fc-scrollgrid { border-color: var(--panel-border); }
 #calendar .fc-list-event-dot { border-color: var(--dot-color, var(--accent)); }
