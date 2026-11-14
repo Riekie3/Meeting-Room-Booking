@@ -4,15 +4,20 @@ include_once('Rooms.class.php');
 
 header('Content-Type: application/json');
 
-if (!isset($_POST['datePicked']) || $_POST['datePicked'] === '') {
+$datePicked = $_POST['datePicked'] ?? '';
+$date = DateTime::createFromFormat('Y-m-d', $datePicked);
+if (!$date || $date->format('Y-m-d') !== $datePicked) {
     echo json_encode([]);
     exit;
 }
 
-$startTime = ($_POST['startTime'] ?? '') !== '' ? $_POST['startTime'] : null;
-$endTime   = ($_POST['endTime'] ?? '') !== '' ? $_POST['endTime'] : null;
+$timeRe = '/^([01]\d|2[0-3]):[0-5]\d$/';
+$startTime = $_POST['startTime'] ?? '';
+$endTime   = $_POST['endTime'] ?? '';
+// A slot only counts when both ends are valid and in order
+$slotOk = preg_match($timeRe, $startTime) && preg_match($timeRe, $endTime) && $startTime < $endTime;
 
 $rooms = new Rooms(ROOMS_FEATURES);
-$rooms->readRoomsDatabase($_POST['datePicked']);
+$rooms->readRoomsDatabase($datePicked);
 
-echo json_encode($rooms->getRoomStatuses($startTime, $endTime));
+echo json_encode($rooms->getRoomStatuses($slotOk ? $startTime : null, $slotOk ? $endTime : null));

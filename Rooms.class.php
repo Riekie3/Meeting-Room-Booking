@@ -10,7 +10,16 @@ class Rooms {
 
     public function readRoomsDatabase($date) {
         // Convert dd/mm/yy → YYYY-MM-DD for storage
-        $this->date = $this->normalizeDate($date);
+        $normalized = $this->normalizeDate($date);
+
+        // The date becomes part of a file path, so only accept a strict YYYY-MM-DD
+        // (blocks path traversal such as "../../x")
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $normalized)) {
+            $this->date = null;
+            $this->rooms = [];
+            return;
+        }
+        $this->date = $normalized;
 
         $file = $this->dataFile($this->date);
         $this->rooms = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES) : [];
@@ -54,7 +63,7 @@ class Rooms {
      * Returns true if booked, false if the slot was no longer available.
      */
     public function bookRoom($start, $end, $roomId, $staffName, $dept, $staffId) {
-        if (!array_key_exists($roomId, $this->features)) {
+        if ($this->date === null || !array_key_exists($roomId, $this->features)) {
             return false;
         }
 

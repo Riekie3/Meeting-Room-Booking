@@ -1,63 +1,56 @@
 <?php
 include_once("config.php");
-include_once("Rooms.class.php");
 
 $events = [];
-$files = glob("data/*.txt");
+$files = glob("data/*.txt") ?: [];
 
 foreach ($files as $file) {
     $datePart = basename($file, ".txt"); // e.g. 2025-09-26
-    $rooms = file($file, FILE_IGNORE_NEW_LINES);
+    $lines = file($file, FILE_IGNORE_NEW_LINES) ?: [];
 
-    foreach ($rooms as $line) {
+    foreach ($lines as $line) {
         $parts = explode(",", $line);
-
-        // Expect 6 parts only (not 7)
         if (count($parts) < 6) continue;
 
         list($roomId, $startTime, $endTime, $staff, $dept, $staffId) = $parts;
 
         $capacity = ROOMS_FEATURES[$roomId]["capacity"] ?? "";
         $loc = ROOMS_FEATURES[$roomId]["location"] ?? "";
-        $color = LOCATION_COLORS[$loc] ?? "#3788d8";
+        $color = LOCATION_COLORS[$loc] ?? "#4f46e5";
 
-        // Combine date + time
         $start = $datePart . "T" . $startTime;
         $end   = $datePart . "T" . $endTime;
 
-        // Calculate duration type
-        $startTS = strtotime($start);
-        $endTS   = strtotime($end);
-        $diffMins = ($endTS - $startTS) / 60;
-
+        $diffMins = (strtotime($end) - strtotime($start)) / 60;
         if ($diffMins >= 540) {
-            $durationLabel = "Full Day";
-        } elseif ($diffMins == 60) {
-            $durationLabel = "60 mins";
-        } elseif ($diffMins == 30) {
-            $durationLabel = "30 mins";
+            $durationLabel = "Full day";
+        } elseif ($diffMins >= 60 && $diffMins % 60 == 0) {
+            $hrs = $diffMins / 60;
+            $durationLabel = $hrs . ($hrs == 1 ? " hour" : " hours");
         } else {
             $durationLabel = round($diffMins) . " mins";
         }
 
+        // Plain data only: the page renders these with textContent, never as HTML
         $events[] = [
-            "title" => $roomId . " – " . $durationLabel,
+            "title" => $roomId,
             "start" => $start,
             "end"   => $end,
             "backgroundColor" => $color,
             "borderColor" => $color,
-            "textColor" => "#000",
+            "textColor" => "#ffffff",
             "extendedProps" => [
-                "details" => "
-                    <b>Room:</b> " . htmlspecialchars($roomId) . "<br>
-                    <b>Capacity:</b> " . htmlspecialchars((string)$capacity) . "<br>
-                    <b>Staff:</b> " . htmlspecialchars($staff) . " (" . htmlspecialchars($staffId) . ")<br>
-                    <b>Department:</b> " . htmlspecialchars($dept) . "<br>
-                    <b>Time:</b> " . htmlspecialchars($startTime) . " - " . htmlspecialchars($endTime) . "<br>
-                    <b>Date:</b> " . htmlspecialchars($datePart) . "<br>
-                    <b>Duration:</b> " . htmlspecialchars($durationLabel) . "
-                "
-            ]
+                "room"       => $roomId,
+                "location"   => $loc,
+                "capacity"   => $capacity,
+                "staff"      => $staff,
+                "staffId"    => $staffId,
+                "department" => $dept,
+                "date"       => $datePart,
+                "startTime"  => $startTime,
+                "endTime"    => $endTime,
+                "duration"   => $durationLabel,
+            ],
         ];
     }
 }
